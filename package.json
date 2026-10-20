@@ -14,7 +14,8 @@
     "shexli": "make shexli",
     "log": "journalctl -f -o cat /usr/bin/gnome-shell | grep o-tiling",
     "local-install": "make install",
-    "test": "node tests/layout-snapshot.test.mjs && node --import ./tests/register-shell-loader.mjs tests/lock-layout.test.mjs"
+    "test": "node tests/layout-snapshot.test.mjs && node --import ./tests/register-shell-loader.mjs tests/lock-layout.test.mjs",
+    "test:decorations": "node tests/floating-decorations.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
