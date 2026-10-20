@@ -545,9 +545,19 @@ export class Stack {
         let idx = 0;
         for (const c of this.tabs) {
             if (Ecs.entity_eq(c.entity, entity)) {
+                const was_active = Ecs.entity_eq(this.active, entity);
+                if (was_active) this.active_disconnect();
                 this.remove_tab_component(c, idx);
                 if (this.active_id > idx) {
                     this.active_id -= 1;
+                }
+                if (was_active && this.tabs.length > 0) {
+                    // A detached window may now float above this stack. Stop
+                    // anchoring the tab bar/signals to it before the next reflow.
+                    this.auto_activate();
+                    this.prev_active = null;
+                    this.prev_active_id = 0;
+                    this.restack();
                 }
                 return idx;
             }
