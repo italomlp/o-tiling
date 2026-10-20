@@ -331,3 +331,52 @@ test("post-drag settling accepts an already committed frame after one interval",
   assert.equal(callbacks[0](), false);
   assert.equal(shown, 1);
 });
+for (const activeId of [1, 2, 3]) {
+  test(`removing active tab ${activeId} immediately stops anchoring the stack to its floating window`, () => {
+    const Subject = methods(
+      stackPath,
+      "Stack",
+      ["remove_tab", "auto_activate"],
+      { Ecs: { entity_eq: (a, b) => a === b } },
+    );
+    const stack = new Subject();
+    stack.widgets = {};
+    stack.tabs = [1, 2, 3].map((entity) => ({ entity }));
+    stack.active = activeId;
+    stack.active_id = activeId - 1;
+    stack.prev_active = null;
+    let disconnected = 0;
+    let restacked = 0;
+    stack.active_disconnect = () => disconnected++;
+    stack.remove_tab_component = (c, idx) => stack.tabs.splice(idx, 1);
+    stack.activate = (entity) => {
+      stack.active = entity;
+      stack.active_id = stack.tabs.findIndex((t) => t.entity === entity);
+    };
+    stack.restack = () => restacked++;
+    assert.equal(stack.remove_tab(activeId), activeId - 1);
+    assert.notEqual(stack.active, activeId);
+    assert.ok(stack.tabs.some((t) => t.entity === stack.active));
+    assert.equal(disconnected, 1);
+    assert.equal(restacked, 1);
+  });
+}
+test("removing an inactive tab preserves the active owner", () => {
+  const Subject = methods(stackPath, "Stack", ["remove_tab", "auto_activate"], {
+    Ecs: { entity_eq: (a, b) => a === b },
+  });
+  const stack = new Subject();
+  stack.widgets = {};
+  stack.tabs = [1, 2, 3].map((entity) => ({ entity }));
+  stack.active = 3;
+  stack.active_id = 2;
+  stack.prev_active = null;
+  stack.remove_tab_component = (c, idx) => stack.tabs.splice(idx, 1);
+  stack.active_disconnect = () =>
+    assert.fail("must not disconnect current owner");
+  stack.activate = () => assert.fail("must not switch active tab");
+  stack.restack = () => {};
+  assert.equal(stack.remove_tab(1), 0);
+  assert.equal(stack.active, 3);
+  assert.equal(stack.active_id, 1);
+});
